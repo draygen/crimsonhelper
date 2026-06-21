@@ -1,0 +1,14 @@
+fastapi==0.111.0
+uvicorn[standard]==0.30.0
+sqlalchemy==2.0.30
+pytesseract==0.3.10
+Pillow==10.3.0
+mss==9.0.1
+keyboard==0.13.5
+SpeechRecognition==3.10.4
+pyaudio==0.2.14
+pyttsx3==2.90
+websockets==12.0
+python-multipart==0.0.9
+aiofiles==23.2.1
+python-dotenv==1.0.1

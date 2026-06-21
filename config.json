@@ -1,0 +1,20 @@
+{
+  "hotkey": "f6",
+  "voice_enabled": true,
+  "ocr_engine": "tesseract",
+  "tesseract_path": "C:\\Program Files\\Tesseract-OCR\\tesseract.exe",
+  "youtube_api_key": "",
+  "db_path": "./data/crimsonhelper.db",
+  "screenshots_dir": "./screenshots",
+  "server_host": "127.0.0.1",
+  "server_port": 8000,
+  "capture_region": null,
+  "ocr_lang": "eng",
+  "thumbnail_size": [320, 180],
+  "collab_enabled": true,
+  "collab_server_url": "http://localhost:7777",
+  "collab_agent_id": "local",
+  "game_process": "CrimsonDesert.exe",
+  "process_guard_enabled": true,
+  "capture_debounce_secs": 2.0
+}
