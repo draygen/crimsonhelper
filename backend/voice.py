@@ -3,19 +3,73 @@ Voice command listener and dispatcher.
 Runs in a daemon thread; parsed commands are dispatched to the action registry.
 Uses SpeechRecognition (Google Web Speech by default).
 """
+import ctypes
 import json
+import os
 import re
+import sys
 import threading
 from pathlib import Path
 from datetime import datetime
 from typing import Callable
 
+# ── Silence ALSA + JACK before any audio library loads ───────────────────────
+# WSL2 has no audio device; pyaudio probes every ALSA/JACK backend and floods
+# stderr with dozens of "Unknown PCM" / "Cannot connect to server" lines.
+# Strategy: set ALSA C-level error handler to a no-op (must hold a reference
+# so GC doesn't collect it before ALSA next needs it), then wrap the pyaudio
+# device probe in an fd-level stderr redirect to catch JACK's direct writes.
+try:
+    _asound = ctypes.cdll.LoadLibrary("libasound.so.2")
+    _alsa_cb_t = ctypes.CFUNCTYPE(
+        None, ctypes.c_char_p, ctypes.c_int,
+        ctypes.c_char_p, ctypes.c_int, ctypes.c_char_p,
+    )
+    _alsa_cb = _alsa_cb_t(lambda *_: None)   # held at module scope — must not be GC'd
+    _asound.snd_lib_error_set_handler(_alsa_cb)
+except Exception:
+    pass
+
+
+def _probe_audio() -> bool:
+    """Return True if at least one audio input device exists, silently."""
+    try:
+        import pyaudio
+    except ImportError:
+        return False
+
+    # Redirect fd 2 at the OS level so JACK's direct stderr writes are swallowed
+    devnull = os.open(os.devnull, os.O_WRONLY)
+    saved = os.dup(2)
+    sys.stderr.flush()
+    os.dup2(devnull, 2)
+    os.close(devnull)
+    try:
+        pa = pyaudio.PyAudio()
+        has_input = any(
+            pa.get_device_info_by_index(i).get("maxInputChannels", 0) > 0
+            for i in range(pa.get_device_count())
+        )
+        pa.terminate()
+        return has_input
+    except Exception:
+        return False
+    finally:
+        sys.stderr.flush()
+        os.dup2(saved, 2)
+        os.close(saved)
+
+
+# ── Speech recognition availability ──────────────────────────────────────────
 try:
     import speech_recognition as sr
-    _sr_available = True
+    _sr_available = _probe_audio()
+    if not _sr_available:
+        print("[voice] No audio input device found — voice commands disabled")
 except ImportError:
     _sr_available = False
 
+# ── TTS ───────────────────────────────────────────────────────────────────────
 try:
     import pyttsx3
     _tts_engine = pyttsx3.init()
@@ -32,7 +86,6 @@ _active = False
 _stop_evt = threading.Event()
 _thread: threading.Thread | None = None
 
-# Registered by main.py after DB session factory is available
 _dispatch: Callable[[str], str] | None = None
 _ws_broadcast: Callable[[dict], None] | None = None
 
@@ -57,7 +110,6 @@ def speak(text: str):
 
 
 def _handle_command(cmd: str) -> str:
-    """Parse and route a voice command. Returns a result string."""
     cmd = cmd.lower().strip()
 
     if _dispatch:
@@ -67,7 +119,7 @@ def _handle_command(cmd: str) -> str:
 
     if re.search(r"\bopen dashboard\b", cmd):
         import webbrowser
-        webbrowser.open(f"http://localhost:{_cfg.get('server_port', 8000)}")
+        webbrowser.open(f"http://localhost:{_cfg.get('server_port', 8765)}")
         return "Opening dashboard."
 
     if re.search(r"\bcapture\b|\bscreenshot\b|\bsave screen\b", cmd):
@@ -86,7 +138,7 @@ def _listen_loop():
     global _active
     try:
         if not _sr_available:
-            print("[voice] SpeechRecognition not installed — voice disabled")
+            print("[voice] Voice unavailable — skipping listener")
             return
 
         recognizer = sr.Recognizer()
