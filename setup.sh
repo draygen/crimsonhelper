@@ -24,6 +24,7 @@ echo "[2/4] Checking system dependencies..."
 _PKGS=()
 command -v tesseract &>/dev/null || _PKGS+=(tesseract-ocr tesseract-ocr-eng)
 command -v espeak-ng  &>/dev/null || _PKGS+=(espeak-ng)
+command -v pactl      &>/dev/null || _PKGS+=(pulseaudio alsa-utils)
 dpkg -s portaudio19-dev &>/dev/null 2>&1    || _PKGS+=(portaudio19-dev)
 if [ ${#_PKGS[@]} -gt 0 ]; then
     echo "      Installing: ${_PKGS[*]}"
