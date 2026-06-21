@@ -108,8 +108,11 @@ def _hotkey_loop():
         kb.add_hotkey(HOTKEY, trigger_capture, args=("hotkey",))
         _stop_event.wait()
         kb.remove_all_hotkeys()
-    except Exception as exc:
-        print(f"[capture] Hotkey listener error: {exc}")
+    except Exception:
+        # The keyboard library can't intercept keys while a Windows game has
+        # focus — use hotkey.ahk on the Windows side instead.
+        print(f"[capture] In-WSL hotkey unavailable. "
+              f"Run hotkey.ahk on Windows to use {HOTKEY.upper()} in-game.")
 
 
 def start_listener():

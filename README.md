@@ -49,8 +49,11 @@ cd crimsonhelper
 # — or double-click start.bat from Windows Explorer
 ```
 
-Open **http://localhost:8765** in your browser.  
-Press **F6** in-game to capture a screen.
+Open **http://localhost:8765** in your browser.
+
+**To use F6 in-game**, run `hotkey.ahk` on Windows (requires [AutoHotkey v2](https://www.autohotkey.com)).  
+It intercepts F6 at the Windows level and calls the API — works even while CrimsonDesert has focus.  
+The dashboard "Capture Now" button always works as a manual fallback.
 
 ---
 
