@@ -152,13 +152,19 @@ function EventCard({ event }: { event: WSEvent }) {
   }
   const cls = color[event.type] ?? 'border-surface-600 bg-surface-800/50'
 
+  const categoryLabel = typeof event.category === 'string' ? event.category : 'OCR'
   const label: Record<string, string> = {
-    ocr_complete:    event.category as string ?? 'OCR',
+    ocr_complete:    categoryLabel,
     capture_started: 'Capturing',
     voice_command:   'Voice',
     collab_message:  'Collab',
     pipeline_error:  'Error',
   }
+
+  const questTitle = typeof event.quest_title === 'string' ? event.quest_title : null
+  const items      = Array.isArray(event.items) ? (event.items as string[]) : null
+  const command    = typeof event.command === 'string' ? event.command : null
+  const error      = typeof event.error   === 'string' ? event.error   : null
 
   return (
     <div className={`border rounded px-2 py-1.5 animate-slide-in ${cls}`}>
@@ -172,20 +178,10 @@ function EventCard({ event }: { event: WSEvent }) {
           </span>
         )}
       </div>
-      {event.quest_title && (
-        <p className="text-xs text-crimson-300 truncate">{event.quest_title as string}</p>
-      )}
-      {event.items && (
-        <p className="text-xs text-slate-400 truncate">
-          {(event.items as string[]).join(', ')}
-        </p>
-      )}
-      {event.command && (
-        <p className="text-xs text-blue-300 truncate">"{event.command as string}"</p>
-      )}
-      {event.error && (
-        <p className="text-xs text-red-400 truncate">{event.error as string}</p>
-      )}
+      {questTitle && <p className="text-xs text-crimson-300 truncate">{questTitle}</p>}
+      {items      && <p className="text-xs text-slate-400 truncate">{items.join(', ')}</p>}
+      {command    && <p className="text-xs text-blue-300 truncate">"{command}"</p>}
+      {error      && <p className="text-xs text-red-400 truncate">{error}</p>}
     </div>
   )
 }

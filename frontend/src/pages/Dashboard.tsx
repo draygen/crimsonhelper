@@ -91,7 +91,7 @@ export default function Dashboard({ events }: Props) {
               <div key={i} className="flex items-center gap-2 text-xs text-slate-400">
                 <span className="text-slate-600">{e.ts ? new Date(e.ts as string).toLocaleTimeString() : ''}</span>
                 <span className="text-slate-300 capitalize">{e.type.replace(/_/g, ' ')}</span>
-                {e.quest_title && <span className="text-crimson-400">{e.quest_title as string}</span>}
+                {typeof e.quest_title === 'string' && <span className="text-crimson-400">{e.quest_title}</span>}
               </div>
             ))}
           </div>
