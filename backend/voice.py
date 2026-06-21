@@ -84,45 +84,49 @@ def _handle_command(cmd: str) -> str:
 
 def _listen_loop():
     global _active
-    if not _sr_available:
-        print("[voice] SpeechRecognition not installed — voice disabled")
-        return
+    try:
+        if not _sr_available:
+            print("[voice] SpeechRecognition not installed — voice disabled")
+            return
 
-    recognizer = sr.Recognizer()
-    mic = sr.Microphone()
+        recognizer = sr.Recognizer()
+        mic = sr.Microphone()
 
-    with mic as source:
-        recognizer.adjust_for_ambient_noise(source, duration=1)
+        with mic as source:
+            recognizer.adjust_for_ambient_noise(source, duration=1)
 
-    print("[voice] Listening for commands...")
-    while not _stop_evt.is_set():
-        try:
-            with mic as source:
-                audio = recognizer.listen(source, timeout=5, phrase_time_limit=8)
-            text = recognizer.recognize_google(audio)
-            print(f"[voice] Heard: {text}")
-            result = _handle_command(text)
-            speak(result)
-            if _ws_broadcast:
-                _ws_broadcast({
-                    "type": "voice_command",
-                    "command": text,
-                    "result": result,
-                    "ts": datetime.utcnow().isoformat(),
-                })
-        except sr.WaitTimeoutError:
-            continue
-        except sr.UnknownValueError:
-            continue
-        except sr.RequestError as exc:
-            print(f"[voice] Speech API error: {exc}")
-            _stop_evt.wait(5)
-        except Exception as exc:
-            print(f"[voice] Error: {exc}")
-            _stop_evt.wait(2)
+        print("[voice] Listening for commands...")
+        while not _stop_evt.is_set():
+            try:
+                with mic as source:
+                    audio = recognizer.listen(source, timeout=5, phrase_time_limit=8)
+                text = recognizer.recognize_google(audio)
+                print(f"[voice] Heard: {text}")
+                result = _handle_command(text)
+                speak(result)
+                if _ws_broadcast:
+                    _ws_broadcast({
+                        "type": "voice_command",
+                        "command": text,
+                        "result": result,
+                        "ts": datetime.utcnow().isoformat(),
+                    })
+            except sr.WaitTimeoutError:
+                continue
+            except sr.UnknownValueError:
+                continue
+            except sr.RequestError as exc:
+                print(f"[voice] Speech API error: {exc}")
+                _stop_evt.wait(5)
+            except Exception as exc:
+                print(f"[voice] Error: {exc}")
+                _stop_evt.wait(2)
 
-    _active = False
-    print("[voice] Listener stopped.")
+    except Exception as exc:
+        print(f"[voice] Listener startup failed: {exc}")
+    finally:
+        _active = False
+        print("[voice] Listener stopped.")
 
 
 def start_listener():

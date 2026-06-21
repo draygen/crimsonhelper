@@ -7,7 +7,7 @@
   "db_path": "./data/crimsonhelper.db",
   "screenshots_dir": "./screenshots",
   "server_host": "127.0.0.1",
-  "server_port": 8000,
+  "server_port": 8765,
   "capture_region": null,
   "ocr_lang": "eng",
   "thumbnail_size": [320, 180],

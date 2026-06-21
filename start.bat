@@ -6,7 +6,7 @@ REM Starts the Python backend (which also launches the collab server) inside WSL
 REM The React dev server only runs when you're developing the frontend.
 REM In production, `npm run build` copies the SPA into backend/static/ automatically.
 
-set BACKEND_PORT=8000
+set BACKEND_PORT=8765
 set WSL_DISTRO=
 
 echo [CrimsonHelper] Starting backend...

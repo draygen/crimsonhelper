@@ -49,7 +49,7 @@ cd crimsonhelper
 # — or double-click start.bat from Windows Explorer
 ```
 
-Open **http://localhost:8000** in your browser.  
+Open **http://localhost:8765** in your browser.  
 Press **F6** in-game to capture a screen.
 
 ---

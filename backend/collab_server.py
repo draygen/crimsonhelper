@@ -277,11 +277,19 @@ class Handler(BaseHTTPRequestHandler):
 def run_server():
     global _server_instance
     ensure_dirs()
+    try:
+        srv = HTTPServer(("0.0.0.0", PORT), Handler)
+    except OSError as exc:
+        # Port already in use — another collab server (or a stale one) is running.
+        # That's fine: the SSE client in collab.py will connect to whichever is there.
+        print(f"[collab-server] Port {PORT} already in use ({exc}) — skipping server start", flush=True)
+        return
+    srv.allow_reuse_address = True
+    srv.daemon_threads = True
+    _server_instance = srv
     log({"event": "server_start", "port": PORT, "source": "crimsonhelper"})
-    _server_instance = HTTPServer(("0.0.0.0", PORT), Handler)
-    _server_instance.daemon_threads = True
     print(f"[collab-server] Listening on :{PORT}", flush=True)
-    _server_instance.serve_forever()
+    srv.serve_forever()
 
 
 def start_in_thread() -> threading.Thread:
