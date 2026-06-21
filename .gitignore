@@ -16,6 +16,8 @@ frontend/node_modules/
 # Runtime data
 data/
 screenshots/
+hotkey.pid
+hotkey.log
 
 # Secrets / env
 .env

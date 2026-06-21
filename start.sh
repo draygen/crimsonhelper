@@ -30,9 +30,63 @@ if [ -n "$_STALE" ]; then
     done
 fi
 
+# ── AutoHotkey integration ────────────────────────────────────────────────────
+_AHK_PID_FILE="$ROOT/hotkey.pid"
+_AHK_SCRIPT_WIN="$(wslpath -w "$ROOT/hotkey.ahk" 2>/dev/null || true)"
+
+_find_ahk() {
+    local _p
+    _p="$(cmd.exe /c 'where AutoHotkey64.exe 2>nul' 2>/dev/null | head -1 | tr -d '\r\n')"
+    [ -n "$_p" ] && { wslpath "$_p" 2>/dev/null; return; }
+    _p="$(cmd.exe /c 'where AutoHotkey.exe 2>nul' 2>/dev/null | head -1 | tr -d '\r\n')"
+    [ -n "$_p" ] && { wslpath "$_p" 2>/dev/null; return; }
+    local _u
+    _u="$(cmd.exe /c 'echo %USERNAME%' 2>/dev/null | tr -d '\r\n')"
+    local _candidates=(
+        "/mnt/c/Program Files/AutoHotkey/v2/AutoHotkey64.exe"
+        "/mnt/c/Program Files/AutoHotkey/v2/AutoHotkey32.exe"
+        "/mnt/c/Program Files/AutoHotkey/AutoHotkey64.exe"
+        "/mnt/c/Program Files/AutoHotkey/AutoHotkey.exe"
+        "/mnt/c/Users/$_u/AppData/Local/Programs/AutoHotkey/v2/AutoHotkey64.exe"
+    )
+    for _c in "${_candidates[@]}"; do
+        [ -f "$_c" ] && { echo "$_c"; return; }
+    done
+}
+
+_stop_ahk() {
+    if [ -f "$_AHK_PID_FILE" ]; then
+        local _wpid
+        _wpid="$(tr -d '[:space:]' < "$_AHK_PID_FILE")"
+        [ -n "$_wpid" ] && taskkill.exe /F /PID "$_wpid" >/dev/null 2>&1 && \
+            echo "[CrimsonHelper] AutoHotkey stopped."
+        rm -f "$_AHK_PID_FILE"
+    fi
+}
+
+_start_ahk() {
+    [ -z "$_AHK_SCRIPT_WIN" ] && return
+    local _exe
+    _exe="$(_find_ahk)"
+    if [ -z "$_exe" ]; then
+        echo "[CrimsonHelper] AutoHotkey not found — run hotkey.ahk manually for in-game hotkey"
+        return
+    fi
+    _stop_ahk   # replace any lingering instance
+    "$_exe" "$_AHK_SCRIPT_WIN" &
+    sleep 1     # let AHK write its PID file
+    local _wpid
+    _wpid="$(tr -d '[:space:]' < "$_AHK_PID_FILE" 2>/dev/null || true)"
+    echo "[CrimsonHelper] AutoHotkey started${_wpid:+ (PID $_wpid)} — hotkey active"
+}
+
+trap '_stop_ahk' EXIT
+_start_ahk
+
+echo ""
 echo "[CrimsonHelper] Starting on http://${HOST}:${PORT}"
 echo "[CrimsonHelper] Collab server on :7777"
-echo "[CrimsonHelper] Press F6 in-game to capture"
+echo "[CrimsonHelper] Ctrl+C to stop everything"
 echo ""
 
 python -m uvicorn main:app --host "$HOST" --port "$PORT" --reload
